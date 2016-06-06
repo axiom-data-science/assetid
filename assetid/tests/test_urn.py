@@ -26,7 +26,7 @@ class IoosUrnTests(unittest.TestCase):
         u.label = 'mysupersensor'
         assert u.urn == 'urn:ioos:sensor:me:mysupersensor'
 
-        u.version = 'abc'
+        u.discriminant = 'abc'
         assert u.urn == 'urn:ioos:sensor:me:mysupersensor:abc'
 
         u.component = 'temp'
@@ -53,19 +53,21 @@ class IoosUrnTests(unittest.TestCase):
         assert u.asset_type == 'sensor'
         assert u.authority  == 'myauthority'
         assert u.label      == 'mylabel'
+        assert u.discriminant is None
 
         u = IoosUrn.from_string('urn:ioos:sensor:myauthority:mylabel:mycomponent')
         assert u.asset_type == 'sensor'
         assert u.authority  == 'myauthority'
         assert u.label      == 'mylabel'
         assert u.component  == 'mycomponent'
+        assert u.discriminant is None
 
-        u = IoosUrn.from_string('urn:ioos:sensor:myauthority:mylabel:mycomponent:myversion')
+        u = IoosUrn.from_string('urn:ioos:sensor:myauthority:mylabel:mycomponent:mydiscriminant')
         assert u.asset_type == 'sensor'
         assert u.authority  == 'myauthority'
         assert u.label      == 'mylabel'
         assert u.component  == 'mycomponent'
-        assert u.version    == 'myversion'
+        assert u.discriminant    == 'mydiscriminant'
 
     def test_from_bad_string(self):
         u = IoosUrn.from_string('urn:ioos:sensor:whatami')
@@ -87,6 +89,7 @@ class IoosUrnTests(unittest.TestCase):
         assert u.authority  == 'myauthority'
         assert u.label      == 'mylabel'
         assert u.component  == 'mycomponent'
+        assert u.discriminant is None
 
         u.asset_type = 'station'
         u.component = None
@@ -98,6 +101,7 @@ class IoosUrnTests(unittest.TestCase):
         assert u.authority  == 'myauthority'
         assert u.label      == 'mylabel'
         assert u.component  == 'standard_name#key=key1:value1,key2:value2;some_other_key=some_other_value'
+        assert u.discriminant is None
 
     def test_cdiac_urn(self):
         u = IoosUrn.from_string('urn:ioos:sensor:gov.ornl.cdiac:cheeca_80w_25n:sea_water_temperature')
@@ -105,6 +109,7 @@ class IoosUrnTests(unittest.TestCase):
         assert u.authority  == 'gov.ornl.cdiac'
         assert u.label      == 'cheeca_80w_25n'
         assert u.component  == 'sea_water_temperature'
+        assert u.discriminant is None
 
 
 class TestUrnUtils(unittest.TestCase):
@@ -132,7 +137,7 @@ class TestUrnUtils(unittest.TestCase):
                  vertical_datum='NAVD88',
                  discriminant='2')
         urn = IoosUrn.from_dict('axiom', 'foo', d)
-        assert urn.urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#vertical_datum=navd88'
+        assert urn.urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount:2#vertical_datum=navd88'
 
         d = dict(standard_name='lwe_thickness_of_precipitation_amount',
                  cell_methods='time: sum (interval: PT24H) time: mean')
@@ -174,7 +179,7 @@ class TestUrnUtils(unittest.TestCase):
                  interval='PT1H',
                  discriminant='2')
         urn = IoosUrn.from_dict('axiom', 'foo', d)
-        assert urn.urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean,time:variance;interval=pt1h'
+        assert urn.urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount:2#cell_methods=time:mean,time:variance;interval=pt1h'
 
     def test_from_variable(self):
 
@@ -196,7 +201,7 @@ class TestUrnUtils(unittest.TestCase):
             assert urn.urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
 
             urn = IoosUrn.from_dict('axiom', 'foo', nc.variables['temperature4'].__dict__)
-            assert urn.urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean,time:variance;interval=pt1h'
+            assert urn.urn == 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount:2#cell_methods=time:mean,time:variance;interval=pt1h'
 
     def test_dict_from_urn(self):
         urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount#cell_methods=time:mean,time:variance;interval=pt1h'
@@ -271,21 +276,21 @@ class TestUrnUtils(unittest.TestCase):
         assert 'discriminant' not in d
         assert 'vertical_datum' not in d
 
-        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2'
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount:2'
         d = IoosUrn.from_string(urn).attributes()
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['discriminant'] == '2'
         assert 'interval' not in d
         assert 'cell_methods' not in d
 
-        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean_over_years,time:minimum_within_years;vertical_datum=navd88'
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount:2#cell_methods=time:mean_over_years,time:minimum_within_years;vertical_datum=navd88'
         d = IoosUrn.from_string(urn).attributes()
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['cell_methods'] == 'time: mean over years time: minimum within years'
         assert d['discriminant'] == '2'
         assert d['vertical_datum'] == 'NAVD88'
 
-        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean_over_years,time:minimum_within_years;interval=pt1h;vertical_datum=navd88'
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount:2#cell_methods=time:mean_over_years,time:minimum_within_years;interval=pt1h;vertical_datum=navd88'
         d = IoosUrn.from_string(urn).attributes()
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['cell_methods'] == 'time: mean over years time: minimum within years (interval: PT1H)'
@@ -293,7 +298,7 @@ class TestUrnUtils(unittest.TestCase):
         assert 'interval' not in d
         assert d['vertical_datum'] == 'NAVD88'
 
-        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#cell_methods=time:mean_over_years,time:minimum_within_years;interval=pt1h;vertical_datum=navd88'
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount:2#cell_methods=time:mean_over_years,time:minimum_within_years;interval=pt1h;vertical_datum=navd88'
         d = IoosUrn.from_string(urn).attributes(combine_interval=False)
         assert d['standard_name'] == 'lwe_thickness_of_precipitation_amount'
         assert d['cell_methods'] == 'time: mean over years time: minimum within years'
@@ -301,7 +306,7 @@ class TestUrnUtils(unittest.TestCase):
         assert d['interval'] == 'PT1H'
         assert d['vertical_datum'] == 'NAVD88'
 
-        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount-2#interval=pt2h'
+        urn = 'urn:ioos:sensor:axiom:foo:lwe_thickness_of_precipitation_amount:2#interval=pt2h'
         # Cant have an interval without a cell_method
         with self.assertRaises(ValueError):
             d = IoosUrn.from_string(urn).attributes()
