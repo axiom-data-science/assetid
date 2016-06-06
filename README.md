@@ -31,7 +31,7 @@ print(u.__dict__)
 #  'authority': 'axiom',
 #  'component': None,
 #  'label': 'station1',
-#  'version': None}
+#  'discriminant': None}
 
 print(u.urn)
 # 'urn:ioos:station:axiom:station1'
@@ -47,7 +47,7 @@ print(u.__dict__)
 #  'authority': 'axiom',
 #  'component': None,
 #  'label': 'station1',
-#  'version': None}
+#  'discriminant': None}
 
 print(u.urn)
 # 'urn:ioos:station:axiom:station1'
