@@ -1,14 +1,3 @@
-__version__ = "1.0.0"
+from assetid.urn import IoosUrn  # noqa
 
-# Package level logger
-import logging
-try:
-    # Python >= 2.7
-    from logging import NullHandler
-except ImportError:
-    # Python < 2.7
-    class NullHandler(logging.Handler):
-        def emit(self, record):
-            pass
-logger = logging.getLogger("assetid")
-logger.addHandler(logging.NullHandler())
+__version__ = "0.0.1"

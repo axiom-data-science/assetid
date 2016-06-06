@@ -2,16 +2,20 @@ from __future__ import with_statement
 
 from setuptools import setup, find_packages
 
-from assetid import __version__
-
 
 def readme():
     with open('README.md') as f:
         return f.read()
 
+
+def version():
+    with open('VERSION') as f:
+        return f.read().strip()
+
+
 setup(
     name                = "assetid",
-    version             = __version__,
+    version             = version(),
     description         = "An ocean data asset ID parser developed and used by Axiom Data Science",
     long_description    = readme(),
     license             = 'MIT',
