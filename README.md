@@ -43,12 +43,11 @@ from assetid.urn import IoosUrn
 u = IoosUrn.from_string('urn:ioos:station:axiom:station1')
 
 print u.__dict__
-
-{'asset_type': 'station',
- 'authority': 'axiom',
- 'component': None,
- 'label': 'station1',
- 'version': None}
+# {'asset_type': 'station',
+#  'authority': 'axiom',
+#  'component': None,
+#  'label': 'station1',
+#  'version': None}
 
 print u.urn
 # 'urn:ioos:station:axiom:station1'
