@@ -6,7 +6,7 @@ python:
 
 sudo: false
 
-before_install:
+install:
   # Install miniconda
   # -----------------
   - export CONDA_BASE=http://repo.continuum.io/miniconda/Miniconda
@@ -35,11 +35,25 @@ before_install:
   - conda create --quiet -n $ENV_NAME python=$TRAVIS_PYTHON_VERSION
   - source activate $ENV_NAME
 
-install:
-  # Customise the testing environment
-  # ---------------------------------
-  - conda install pytest
+  # Install testing requirements
+  # ------------------------------------
   - conda install --file requirements-test.txt
   - conda list --export
 
-script: py.test -v
+script:
+  - py.test -s -rxs -v
+  - conda install -n root conda-build anaconda-client
+  - conda build conda-recipe --python $TRAVIS_PYTHON_VERSION
+  - conda install assetid --use-local
+
+after_success:
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" != "" ]; then
+    anaconda -t $ANACONDA_TOKEN upload --force -u axiom-data-science $HOME/miniconda/**/assetid-*.tar.bz2;
+    fi
+
+deploy:
+  provider: releases
+  api_key:
+    secure: e4cim8hcFY5sZNekDvMqGsQwzx3cHGC0NnGK+lQP/HWM5hrtpLeC6/nK09XvlxUk+Lha6xt5I9cEX5Xd3fQCXGjYw2EUi7zOtGQJAj74lD+LD3dOZRU2eoPTnnKIRwIal2YXlCvb2wQwUA8+5bilpE5hUTvOg504J9UWIIwLoB6IEgsl13G0Lg23zkvd4/nX32qITYsKeqb5w12RwJlGN+FsNyZ7Gfls8U7fNotdqEg075i/V/YKPArNr06r4084UgH9oqQkKQxgkZuBqDHaSOItLhBzgxzM4fWG+WfH5OVTD9pbAr9CIkZd8JyBpEt53KtOP9jOW+hb7iRGmM/gP5fXid6TOKw4u3mNqujc76EHtJfHB0E/KjOcePCsw8qFGtB8p2ccjpxF819VxhISgDXUjze4mcgsIR/UD7t1IQR8cFpj9Nu63dukEmgAYb/Ba3tK21/OoFVQXk6TvqMvaM9arBkc+pNebl5rL7MAvoWf53Tyfx6zNnYhR4WOm/NWi/4xAnQbE8Fbeq02NCkdkNkHpC2GE/tHZgusdI0RJcqZ9knpKeCwHAWTmbrKS3N+KkHNWSoK2kLiizYqS78M5pr710MEgQzgqHr5T5Eq/5NnRASrlXP4z7EqyNOTME5GojFMrPYukIEHCr34v86kpE0wQORmHUaRY+EiL7+Su9o=
+  on:
+    tags: true

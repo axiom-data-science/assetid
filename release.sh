@@ -10,11 +10,13 @@ fi
 VERSION=$1
 
 # Set version to release
-echo $VERSION > VERSION
 sed -i "s/^__version__ = .*/__version__ = \"$VERSION\"/" "${NAME}/__init__.py"
+sed -i "s/version: .*/version: \"$VERSION\"/" conda-recipe/meta.yaml
+echo $VERSION > VERSION
 
-git add VERSION
 git add "${NAME}/__init__.py"
+git add conda-recipe/meta.yaml
+git add VERSION
 
 # Commit release
 git commit -m "Release $VERSION"
@@ -24,5 +26,4 @@ git tag $VERSION
 python setup.py sdist upload
 
 # Push to Git
-git push --tags
-git push
+git push --tags origin master

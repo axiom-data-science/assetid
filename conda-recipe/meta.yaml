@@ -1,0 +1,32 @@
+package:
+  name: assetid
+  version: "0.0.4"
+
+source:
+    path: ../
+
+build:
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record record.txt
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+
+test:
+  imports:
+    - assetid
+    - assetid.tests
+
+about:
+  home: "https://github.com/axiom-data-science/assetit"
+  license: MIT
+  summary: 'An ocean data asset ID parser developed and used by Axiom Data Science'
+
+extra:
+  recipe-maintainers:
+    - kwilcox
