@@ -17,6 +17,7 @@ class IoosUrn(object):
         self.authority    = None
         self.label        = None
         self.component    = None
+        self.fragment     = None
         self.discriminant = None
 
         for k, v in kwargs.items():
@@ -25,9 +26,9 @@ class IoosUrn(object):
     @staticmethod
     def from_string(urn_string):
         complete = urn_string.split('#')
-        extras = ''
+        fragment = None
         if len(complete) > 1:
-            extras = '#{0}'.format(complete[1])
+            fragment = complete[1]
         parts = complete[0].split(':')
 
         if len(parts) < 5:
@@ -37,19 +38,19 @@ class IoosUrn(object):
         urn.asset_type = parts[2]
         urn.authority  = parts[3]
         urn.label      = parts[4]
+        urn.fragment   = fragment
         if len(parts) > 5:
             if urn.asset_type == 'station':
                 urn.discriminant = parts[5]
             elif len(parts) > 6:
                 # Also a discriminant specified, so this has to be the component
-                urn.component = parts[5] + extras
+                urn.component = parts[5]
             else:
-                logger.debug("Assuming that {0} is the 'component' piece of the URN (not the 'discriminant')".format(parts[5] + extras))
-                urn.component = parts[5] + extras
+                logger.debug("Assuming that {0} is the 'component' piece of the URN (not the 'discriminant')".format(parts[5]))
+                urn.component = parts[5]
         if len(parts) > 6:
             urn.discriminant = parts[6]
         if len(parts) > 7:
-            pass
             logger.warning("The URN is too long stripping off '{}'".format(':'.join(parts[7:])))
         return urn
 
@@ -59,7 +60,7 @@ class IoosUrn(object):
         def clean_value(v):
             return v.replace('(', '').replace(')', '').strip().replace(' ', '_')
 
-        extras = []
+        fragments = []
         intervals = []  # Because it can be part of cell_methods and its own dict key
 
         if 'cell_methods' in data_dict and data_dict['cell_methods']:
@@ -98,23 +99,21 @@ class IoosUrn(object):
                         member_strings.append('{}:{}'.format(group, m[1]))
                     mems.append(','.join(member_strings))
             if mems:
-                extras.append('cell_methods={}'.format(','.join(mems)))
+                fragments.append('cell_methods={}'.format(','.join(mems)))
             if cell_intervals:
                 intervals += cell_intervals
 
         if 'bounds' in data_dict and data_dict['bounds']:
-            extras.append('bounds={0}'.format(data_dict['bounds']))
+            fragments.append('bounds={0}'.format(data_dict['bounds']))
 
         if 'vertical_datum' in data_dict and data_dict['vertical_datum']:
-            extras.append('vertical_datum={0}'.format(data_dict['vertical_datum']))
+            fragments.append('vertical_datum={0}'.format(data_dict['vertical_datum']))
 
         if 'interval' in data_dict and data_dict['interval']:
             if isinstance(data_dict['interval'], (list, tuple,)):
                 intervals += data_dict['interval']
             elif isinstance(data_dict['interval'], str):
                 intervals += [data_dict['interval']]
-
-        logger.info(data_dict)
 
         if 'standard_name' in data_dict and data_dict['standard_name']:
             variable_name = data_dict['standard_name']
@@ -124,21 +123,16 @@ class IoosUrn(object):
             variable_name = ''.join(random.choice(string.ascii_uppercase) for _ in range(8)).lower()
             logger.warning("Had to randomly generate a variable name: {0}".format(variable_name))
 
-        if 'discriminant' in data_dict and data_dict['discriminant']:
-            variable_name = '{}:{}'.format(variable_name, data_dict['discriminant'])
-
         if intervals:
             intervals = list(set(intervals))  # Unique them
-            extras.append('interval={}'.format(','.join(intervals)))
-
-        if extras:
-            variable_name = '{0}#{1}'.format(variable_name, ';'.join(extras))
+            fragments.append('interval={}'.format(','.join(intervals)))
 
         urn = IoosUrn(asset_type='sensor',
                       authority=authority,
                       label=label,
                       component=variable_name,
-                      discriminant=None)
+                      fragment=';'.join(fragments) if fragments else None,
+                      discriminant=data_dict.get('discriminant'))
 
         return urn
 
@@ -151,6 +145,8 @@ class IoosUrn(object):
             z += ':{}'.format(self.component)
         if self.discriminant is not None:
             z += ':{}'.format(self.discriminant)
+        if self.fragment is not None:
+            z += '#{}'.format(self.fragment)
         return z.lower()
 
     def attributes(self, combine_interval=True):
@@ -166,21 +162,15 @@ class IoosUrn(object):
             logger.error("This function only works on 'sensor' URNs.")
             return dict()
 
-        if '#' in self.component:
-            standard_name, extras = self.component.split('#')
-        else:
-            standard_name = self.component
-            extras = ''
-
-        d = dict(standard_name=standard_name)
+        d = dict(standard_name=self.component)
 
         if self.discriminant is not None:
             d['discriminant'] = self.discriminant
 
         intervals = []
         cell_methods = []
-        if extras:
-            for section in extras.split(';'):
+        if self.fragment:
+            for section in self.fragment.split(';'):
                 key, values = section.split('=')
                 if key == 'interval':
                     # special case, intervals should be appended to the cell_methods

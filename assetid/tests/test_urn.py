@@ -67,7 +67,7 @@ class IoosUrnTests(unittest.TestCase):
         assert u.authority  == 'myauthority'
         assert u.label      == 'mylabel'
         assert u.component  == 'mycomponent'
-        assert u.discriminant    == 'mydiscriminant'
+        assert u.discriminant == 'mydiscriminant'
 
     def test_from_bad_string(self):
         u = IoosUrn.from_string('urn:ioos:sensor:whatami')
@@ -89,6 +89,7 @@ class IoosUrnTests(unittest.TestCase):
         assert u.authority  == 'myauthority'
         assert u.label      == 'mylabel'
         assert u.component  == 'mycomponent'
+        assert u.fragment is None
         assert u.discriminant is None
 
         u.asset_type = 'station'
@@ -100,7 +101,8 @@ class IoosUrnTests(unittest.TestCase):
         assert u.asset_type == 'sensor'
         assert u.authority  == 'myauthority'
         assert u.label      == 'mylabel'
-        assert u.component  == 'standard_name#key=key1:value1,key2:value2;some_other_key=some_other_value'
+        assert u.component  == 'standard_name'
+        assert u.fragment   == 'key=key1:value1,key2:value2;some_other_key=some_other_value'
         assert u.discriminant is None
 
     def test_cdiac_urn(self):
@@ -109,7 +111,17 @@ class IoosUrnTests(unittest.TestCase):
         assert u.authority  == 'gov.ornl.cdiac'
         assert u.label      == 'cheeca_80w_25n'
         assert u.component  == 'sea_water_temperature'
+        assert u.fragment is None
         assert u.discriminant is None
+
+    def test_cdiac_urn_with_discrim(self):
+        u = IoosUrn.from_string('urn:ioos:sensor:gov.ornl.cdiac:cheeca_80w_25n:sea_water_temperature:somediscrim#key=key1:value1,key2:value2;some_other_key=some_other_value')
+        assert u.asset_type == 'sensor'
+        assert u.authority  == 'gov.ornl.cdiac'
+        assert u.label      == 'cheeca_80w_25n'
+        assert u.component  == 'sea_water_temperature'
+        assert u.fragment   == 'key=key1:value1,key2:value2;some_other_key=some_other_value'
+        assert u.discriminant == 'somediscrim'
 
 
 class TestUrnUtils(unittest.TestCase):
